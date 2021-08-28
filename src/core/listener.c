@@ -575,6 +575,10 @@ QuicListenerAcceptConnection(
         return;
     }
 
+    // Generate more source CIDS to handle the case that
+    // the first source CID get retired during handshake
+    QuicConnGenerateNewSourceCids(Connection, FALSE);
+
     if (!QuicListenerClaimConnection(Listener, Connection, Info)) {
         Listener->TotalRejectedConnections++;
         QuicPerfCounterIncrement(QUIC_PERF_COUNTER_CONN_APP_REJECT);
