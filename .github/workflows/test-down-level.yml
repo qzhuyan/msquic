@@ -5,6 +5,7 @@ on:
     branches:
     - main
     - release/*
+    - dev/william/impl-send-frame-streams-blocked-test
   pull_request:
     branches:
     - main
@@ -23,7 +24,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        release: ['2.0.5','2.1.3']
+        release: ['2.0.6','2.1.4']
         os: [ubuntu-latest, windows-latest]
         arch: [x64]
         tls: [schannel, openssl]
