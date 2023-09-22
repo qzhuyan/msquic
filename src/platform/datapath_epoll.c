@@ -643,6 +643,10 @@ CxPlatDataPathInitialize(
     CxPlatRefInitializeEx(&Datapath->RefCount, Datapath->PartitionCount);
     CxPlatDataPathCalculateFeatureSupport(Datapath, ClientRecvContextLength);
 
+    if (Config && !!(Config->Flags & QUIC_EXECUTION_CONFIG_FLAG_GSO_OFF)) {
+        Datapath->Features &= ~CXPLAT_DATAPATH_FEATURE_SEND_SEGMENTATION;
+    }
+
     //
     // Initialize the per processor contexts.
     //
