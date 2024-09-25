@@ -6,6 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="StreamReceiveComplete function ">
       
+      
       <link rel="icon" href="../../favicon.ico">
       <link rel="stylesheet" href="../../public/docfx.min.css">
       <link rel="stylesheet" href="../../public/main.css">
@@ -28,15 +29,15 @@
       <meta name="loc:changeTheme" content="Change theme">
       <meta name="loc:copy" content="Copy">
       <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
   </head>
-
-  <script type="module" src="./../../public/docfx.min.js"></script>
-
-  <script>
-    const theme = localStorage.getItem('theme') || 'auto'
-    document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
-  </script>
-
 
   <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
     <header class="bg-body border-bottom">
@@ -76,7 +77,7 @@
 
       <div class="content">
         <div class="actionbar">
-          <button class="btn btn-lg border-0 d-md-none" style="margin-top: -.65em; margin-left: -.8em" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
             <i class="bi bi-list"></i>
           </button>
 
@@ -100,8 +101,9 @@ void
 <p><strong>TODO</strong></p>
 <h1 id="remarks">Remarks</h1>
 <p>This is an asynchronous API but can run inline if called in a callback.
-The application must ensure that one <code>StreamReceiveComplete</code> call corresponds to one <code>QUIC_STREAM_EVENT_RECEIVE</code> event.
-Duplicate <code>StreamReceiveComplete</code> calls after one <code>QUIC_STREAM_EVENT_RECEIVE</code> event are ignored silently even with different <code>BufferLength</code>.</p>
+The application, without setting <code>StreamMultiReceiveEnabled</code>, must ensure that one <code>StreamReceiveComplete</code> call corresponds to one <code>QUIC_STREAM_EVENT_RECEIVE</code> event.
+Duplicate <code>StreamReceiveComplete</code> calls after one <code>QUIC_STREAM_EVENT_RECEIVE</code> event are ignored silently even with different <code>BufferLength</code>.
+The <code>StreamMultiReceiveEnabled</code> mode doesn't follow this rule. Multiple <code>QUIC_STREAM_EVENT_RECEIVE</code> events can be indicated at once by <code>StreamReceiveComplete</code>. The application needs to keep track of accumulated <code>TotalBufferLength</code> with this mode.</p>
 <h1 id="see-also">See Also</h1>
 <p><a href="StreamOpen.html">StreamOpen</a><br>
 <a href="StreamClose.html">StreamClose</a><br>

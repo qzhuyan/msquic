@@ -6,6 +6,7 @@
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <meta name="title" content="Using Streams ">
       
+      
       <link rel="icon" href="../favicon.ico">
       <link rel="stylesheet" href="../public/docfx.min.css">
       <link rel="stylesheet" href="../public/main.css">
@@ -28,15 +29,15 @@
       <meta name="loc:changeTheme" content="Change theme">
       <meta name="loc:copy" content="Copy">
       <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
   </head>
-
-  <script type="module" src="./../public/docfx.min.js"></script>
-
-  <script>
-    const theme = localStorage.getItem('theme') || 'auto'
-    document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
-  </script>
-
 
   <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
     <header class="bg-body border-bottom">
@@ -76,7 +77,7 @@
 
       <div class="content">
         <div class="actionbar">
-          <button class="btn btn-lg border-0 d-md-none" style="margin-top: -.65em; margin-left: -.8em" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
             <i class="bi bi-list"></i>
           </button>
 
@@ -126,11 +127,14 @@
 <p>When the send has been completely shut down the app will get a <code>QUIC_STREAM_EVENT_SEND_SHUTDOWN_COMPLETE</code> event. This will happen immediately on an abortive send or after a graceful send has been acknowledged by the peer.</p>
 <h2 id="0-rtt">0-RTT</h2>
 <p>An app can opt in to sending stream data with 0-RTT keys (if available) by including the <code>QUIC_SEND_FLAG_ALLOW_0_RTT</code> flag on <a href="api/StreamSend.html">StreamSend</a> call. MsQuic doesn't make any guarantees that the data will actually be sent with 0-RTT keys. There are several reasons it may not happen, such as keys not being available, packet loss, flow control, etc.</p>
+<h2 id="cancel-on-loss">Cancel On Loss</h2>
+<p>In case it is desirable to cancel a stream when packet loss is deteced instead of retransmitting the affected packets, the <code>QUIC_SEND_FLAG_CANCEL_ON_LOSS</code> can be supplied on a <a href="api/StreamSend.html">StreamSend</a> call. Doing so will irreversibly switch the associated stream to this behavior. This includes <em>every</em> subsequent send call on the same stream, even if the call itself does not include the above flag.</p>
+<p>If a stream gets canceled because it is in 'cancel on loss' mode, a <code>QUIC_STREAM_EVENT_CANCEL_ON_LOSS</code> event will get emitted. The event allows the app to provide an error code that is communicated to the peer via a <code>QUIC_STREAM_EVENT_PEER_SEND_ABORTED</code> event.</p>
 <h1 id="receiving">Receiving</h1>
 <p>Data is received and delivered to apps via the <code>QUIC_STREAM_EVENT_RECEIVE</code> event. The event indicates zero, one or more contiguous buffers up to the application.</p>
 <p>Typically, the buffer count is one, which means that most events will include a single buffer containing the received data.</p>
 <p>When the buffer count is 0, it signifies the reception of a QUIC frame with empty data, which also indicates the end of stream data.</p>
-<p>Currently, the maximum buffer count is 2 in the case of partial receive, where only a portion of the buffer data is consumed (as explained below). However, it is strongly advised not to assume in application code that the upper limit is always 2. This caution is important because future releases may incorporate multiple circular buffers to enhance performance, leading to potential changes in the buffer count limit.</p>
+<p>Currently, the maximum buffer count is 3 in the case of partial receive, where only a portion of the buffer data is consumed (as explained below). However, it is strongly advised not to assume in application code that the upper limit is always 3. This caution is important because future releases may change internal algorithm, leading to potential changes in the buffer count limit.</p>
 <p>The app then may respond to the event in a number of ways:</p>
 <h2 id="synchronous-vs-asynchronous">Synchronous vs Asynchronous</h2>
 <p>The app has the option of either processing the received data in the callback (synchronous) or queuing the work to a separate thread (asynchronous). If the app processes the data synchronously it must do so in a timely manner. Any significant delays will delay other QUIC processing (such as sending acknowledgments), which can cause protocol issues (dropped connections).</p>
@@ -142,6 +146,10 @@
 <p>Any value less than or equal to the initial <strong>TotalBufferLength</strong> value is allowed, including zero.</p>
 <p>Whenever a receive isn't fully accepted by the app, additional receive events are immediately disabled. The app is assumed to be at capacity and not able to consume more until further indication. To re-enable receive callbacks, the app must call <a href="api/StreamReceiveSetEnabled.html">StreamReceiveSetEnabled</a>.</p>
 <p>There are cases where an app may want to partially accept the current data, but still immediately get a callback with the rest of the data. To do this (only works in the synchronous flow) the app must return <code>QUIC_STATUS_CONTINUE</code>.</p>
+<h2 id="multi-receive-mode">Multi Receive mode</h2>
+<p>Setting <a href="Settings.html"><code>StreamMultiReceiveEnabled</code></a> an app can continue getting indicated by <code>QUIC_STREAM_EVENT_RECEIVE</code> without returning <code>QUIC_STATUS_SUCCESS</code> nor calling <a href="api/StreamReceiveComplete.html">StreamReceiveComplete</a>.</p>
+<p>This changes internal receive buffer more efficient for continuous receiving.</p>
+<p>The app need to keep track of total <code>TotalBufferLength</code> to later call <a href="api/StreamReceiveComplete.html">StreamReceiveComplete</a> appropriately.</p>
 
 </article>
 
