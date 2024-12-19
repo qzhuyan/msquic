@@ -287,7 +287,7 @@ QuicPacketBuilderPrepare(
             NewDatagramLength > Connection->PeerTransportParams.MaxUdpPayloadSize) {
             NewDatagramLength = (uint16_t)Connection->PeerTransportParams.MaxUdpPayloadSize;
         }
-
+        printf("^^ NewDatagramLength: %u\n", NewDatagramLength);
         Builder->Datagram =
             CxPlatSendDataAllocBuffer(
                 Builder->SendData,

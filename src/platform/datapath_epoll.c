@@ -327,7 +327,11 @@ Error:
         const uint32_t SendDataSize =
             sizeof(CXPLAT_SEND_DATA) + (CXPLAT_MAX_IO_BATCH_SIZE - 1) * sizeof(struct iovec);
         Datapath->SendDataSize = SendDataSize;
-        Datapath->SendIoVecCount = CXPLAT_MAX_IO_BATCH_SIZE;
+        Datapath->SendIoVecCount = (CXPLAT_MAX_IO_BATCH_SIZE - 1);
+        printf("^^ SendDataSize IOV : %u, size of send_data: %lu, iov_cnt: %u, iov_size: %lu\n", Datapath->SendDataSize,
+               sizeof(CXPLAT_SEND_DATA),
+               Datapath->SendIoVecCount, sizeof(struct iovec));
+
     }
 
     Datapath->RecvBlockStride =
@@ -345,6 +349,7 @@ Error:
             Datapath->RecvBlockBufferOffset + CXPLAT_SMALL_IO_BUFFER_SIZE;
     }
 
+    printf("^^ SendDataSize: %u\n", Datapath->SendDataSize);
     Datapath->Features |= CXPLAT_DATAPATH_FEATURE_TCP;
 }
 
@@ -400,6 +405,7 @@ DataPathInitialize(
 
     const size_t DatapathLength =
         sizeof(CXPLAT_DATAPATH) + PartitionCount * sizeof(CXPLAT_DATAPATH_PARTITION);
+
 
     CXPLAT_DATAPATH* Datapath =
         (CXPLAT_DATAPATH*)CXPLAT_ALLOC_PAGED(DatapathLength, QUIC_POOL_DATAPATH);
@@ -2092,6 +2098,7 @@ SendDataAlloc(
     CXPLAT_DBG_ASSERT(SocketContext->Binding == Socket);
     CXPLAT_DBG_ASSERT(SocketContext->Binding->Datapath == SocketContext->DatapathPartition->Datapath);
     CXPLAT_SEND_DATA* SendData = CxPlatPoolAlloc(&SocketContext->DatapathPartition->SendBlockPool);
+    printf("^^ SendData addr = %p\n", SendData);
     if (SendData != NULL) {
         SendData->SocketContext = SocketContext;
         SendData->ClientBuffer.Buffer = SendData->Buffer;
@@ -2154,7 +2161,14 @@ CxPlatSendDataFinalizeSendBuffer(
         struct iovec* IoVec = &SendData->Iovs[SendData->BufferCount - 1];
         IoVec->iov_base = SendData->ClientBuffer.Buffer;
         IoVec->iov_len = SendData->ClientBuffer.Length;
-        if (SendData->TotalSize + SendData->SegmentSize > sizeof(SendData->Buffer) ||
+        printf("^^ SendData Total %u, BufferCount %u, SendIoVecCount %u, SendSegmentSize %u\n",
+               SendData->TotalSize,
+               SendData->BufferCount,
+               SendData->SocketContext->DatapathPartition->Datapath->SendIoVecCount,
+               SendData->SegmentSize
+               );
+        if (SendData->SegmentSize == 0 ||
+            SendData->TotalSize + SendData->SegmentSize > sizeof(SendData->Buffer) ||
             SendData->BufferCount == SendData->SocketContext->DatapathPartition->Datapath->SendIoVecCount) {
             SendData->ClientBuffer.Buffer = NULL;
         } else {

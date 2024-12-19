@@ -694,6 +694,8 @@ QuicStreamCopyFromSendRequests(
     CXPLAT_DBG_ASSERT(Len > 0);
     CXPLAT_DBG_ASSERT(Stream->SendRequests != NULL);
     CXPLAT_DBG_ASSERT(Offset >= Stream->SendRequests->StreamOffset);
+    printf("^^ Buffer Len: %u\n", Len);
+    //Len = Len - 1;
 
     //
     // Find the send request containing the first byte, using the bookmark if
@@ -740,6 +742,7 @@ QuicStreamCopyFromSendRequests(
         uint32_t BufferLeft = Req->Buffers[CurIndex].Length - (uint32_t)CurOffset;
         uint16_t CopyLength = Len < BufferLeft ? Len : (uint16_t)BufferLeft;
         CXPLAT_DBG_ASSERT(CopyLength > 0);
+        printf("^^ Copy Len: %u at %p\n", CopyLength, Buf);
         CxPlatCopyMemory(Buf, Req->Buffers[CurIndex].Buffer + CurOffset, CopyLength);
         Len -= CopyLength;
         Buf += CopyLength;
@@ -905,10 +908,10 @@ QuicStreamWriteStreamFrames(
     //
     // Write frames until we've filled the provided space.
     //
-
+    printf("^^ QuicStreamWriteStreamFrames %u \n", *BufferLength);
     while (BytesWritten < *BufferLength &&
         PacketMetadata->FrameCount < QUIC_MAX_FRAMES_PER_PACKET) {
-
+        printf("^^ QuicStreamWriteStreamFrames iter: %u \n", *BufferLength);
         //
         // Find the bounds of this frame. Left is the offset of the first byte
         // in the frame, and Right is the offset of the first byte AFTER the
@@ -1186,7 +1189,7 @@ QuicStreamSendWrite(
 
     if (HasStreamDataFrames(Stream->SendFlags) &&
         QuicStreamSendCanWriteDataFrames(Stream)) {
-
+        printf("^^ AvailableBufferLength %u \n", AvailableBufferLength);
         uint16_t StreamFrameLength = AvailableBufferLength - Builder->DatagramLength;
         QuicStreamWriteStreamFrames(
             Stream,
